@@ -1,0 +1,45 @@
+# Render.com service manifest for Enterprise Automation Agent
+# See: https://render.com/docs/manifest
+
+services:
+  - type: web
+    name: enterprise-automation-agent
+    env: python
+    branch: notifier
+    plan: free
+    # Build: ensure pip is up-to-date and install dependencies
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    # Start the FastAPI app via uvicorn. Render provides $PORT at runtime.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Health-check endpoint used by Render to determine service health
+    healthCheckPath: /api/health
+    # Automatically deploy on pushes to the configured branch
+    autoDeploy: true
+    # Useful environment variables / placeholders. Replace values in Render dashboard.
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: RENDER_ENV
+        value: "production"
+      # Add your DB/secret env vars in the Render dashboard (do not commit secrets)
+      # - key: DATABASE_URL
+      #   value: "postgres://user:pass@host:5432/db"
+      # - key: REDIS_URL
+      #   value: "redis://..."
+
+# Optional: you can add a separate worker service if you prefer to run background
+# workers outside the web dyno. Example (commented out):
+#
+#services:
+#  - type: worker
+#    name: enterprise-automation-agent-worker
+#    env: python
+#    branch: notifier
+#    plan: free
+#    buildCommand: |
+#      python -m pip install --upgrade pip
+#      pip install -r requirements.txt
+#    startCommand: python -u -m app.workers.processor
+#    autoDeploy: true
